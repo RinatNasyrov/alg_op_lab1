@@ -1,0 +1,24 @@
+[{
+  "selector": "core",
+  "style": {
+    "selection-box-color": "#AAD8FF",
+    "selection-box-border-color": "#8BB0D0",
+    "selection-box-opacity": "0.5"
+  }
+}, {
+  "selector": "node",
+  "style": {
+      "background-color": "blue",
+      "label": "data(name)"
+  }
+}, {
+  "selector": "edge",
+  "style": {
+      "width": 3,
+      "line-color": "#ccc",
+      "target-arrow-color": "#ccc",
+      "target-arrow-shape": "triangle",
+      "curve-style": "bezier",
+      "label": "data(weight)"
+  }
+}]
