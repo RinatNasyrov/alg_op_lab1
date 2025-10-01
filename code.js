@@ -251,7 +251,6 @@ Promise.all([
             group: 'edges',
             data: {
               id: id.toString(),
-              rIntnId: id,
               source: lastNodeId,
               target: nodeId,
               weight: 1,
