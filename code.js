@@ -56,6 +56,14 @@ Promise.all([
     // Функция чтобы найти первый элемент по css-паттерну
     var $ = document.querySelector.bind(document);
 
+    var data = function(element){
+      return element._private.data
+    }
+
+    var group = function(element){
+      return element._private.group
+    }
+
     // |================================|
     // |                                |
     // |          Канвас                |
@@ -66,11 +74,11 @@ Promise.all([
       container: document.getElementById('cy'),
       style: dataArray[0],
       elements: dataArray[1],
-      layout: { name: 'grid' }
+      layout: { name: 'circle' }
     });
 
     // Значения слайдеров
-    var idealEdgeLengthVal = 100;
+    var idealEdgeLengthVal = 500;
 
     // Параметры отрисовки сцены
     var params = {
@@ -273,13 +281,13 @@ Promise.all([
     }
 
     function changeNode(node) {
-      let name = prompt('Введите новое название');
+      let name = prompt('Введите новое название', data(node).name);
       node.data('name', name)
     }
 
     function changeEdge(edge) {
       let weight = undefined
-      weight = parseFloat(prompt('Введите новое значение', '1'));
+      weight = parseFloat(prompt('Введите новое значение', data(edge).weight));
       if (isNaN(weight)) {
         alert('Было введено не число')
       } else {
@@ -298,7 +306,7 @@ Promise.all([
     function depthSearchForCycles(cyclesList, currentNode, visetedNodesList) {
       visetedNodesList.push(currentNode)
       for (let edge of currentNode.outgoers().edges()) { 
-        nodeId = edge._private.data.target
+        nodeId = data(edge).target
         nextNode = cy.getElementById(nodeId)
         if (nextNode == visetedNodesList[0])
         { cyclesList.push(Array.from(visetedNodesList)) }
@@ -310,16 +318,15 @@ Promise.all([
 
     function printCycles(cyclesList) {
       var textResult = ""
-      for (let cycle of cyclesList) {
-        if (!cycle)
-        { continue; }
+      for (let [i, cycle] of cyclesList.entries()) {
+        textResult += `${i + 1}.`
         firstNode = cycle[0]
         for (let node of cycle) {
-          textResult += node._private.data.name + "->"
+          textResult += `${data(node).name}->`
         }
-        textResult += firstNode._private.data.name + "\n"
+        textResult += `${data(firstNode).name}\n`
       }
-      alert(textResult)
+      alert(textResult);
     }
 
     // |================================|
@@ -329,22 +336,20 @@ Promise.all([
     // |================================|
     cy.on('click', function(e){
       let target = e.target
-      let group = target._private.group
-      let data = target._private.data
       if (currentAction == Action.CREATE) {
-        if (group == Groups.NODES) {
-          createEdge(data.id)
+        if (group(target) == Groups.NODES) {
+          createEdge(data(target).id)
         }
-        else if (group === undefined) {
+        else if (group(target) === undefined) {
           createNode(e.position.x, e.position.y);
         }
       } else if (currentAction == Action.DESTROY) {
-        if (group) { destroy(target); }
+        if (group(target)) { destroy(target); }
       } else if (currentAction == Action.CHANGE) {
-        if (group == Groups.NODES) {
+        if (group(target) == Groups.NODES) {
           changeNode(target);
         }
-        else if (group == Groups.EDGES) {
+        else if (group(target) == Groups.EDGES) {
           changeEdge(target);
         }
       }
