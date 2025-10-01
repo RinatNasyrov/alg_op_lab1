@@ -1,4 +1,3 @@
-/* global Promise, fetch, window, cytoscape, document, tippy, _ */
 const Colors = {
   BLUE: 'blue',
   RED: 'red',
@@ -213,6 +212,13 @@ Promise.all([
     radio.forEach( makeRadio );
 
     // |================================|
+    // |            Кнопка              |
+    // |================================|
+    var $cyclesButton = h('button', { }, [t('Обнаружить циклы')]);
+    $cyclesButton.addEventListener('click', findCycles)
+    $config.appendChild( $cyclesButton );
+
+    // |================================|
     // |                                |
     // |    Объявления функций          |
     // |                                |
@@ -279,6 +285,41 @@ Promise.all([
       } else {
       edge.data('weight', weight)
       }
+    }
+
+    function findCycles() {
+      var cyclesList = []
+      for (let node of cy.nodes()) {
+        cyclesList = cyclesList.concat(depthSearchForCycles([], node, []));
+      }
+      printCycles(cyclesList);
+    }
+
+    function depthSearchForCycles(cyclesList, currentNode, visetedNodesList) {
+      visetedNodesList.push(currentNode)
+      for (let edge of currentNode.outgoers().edges()) { 
+        nodeId = edge._private.data.target
+        nextNode = cy.getElementById(nodeId)
+        if (nextNode == visetedNodesList[0])
+        { cyclesList.push(Array.from(visetedNodesList)) }
+        else if (!visetedNodesList.includes(nextNode))
+        { cyclesList = depthSearchForCycles(cyclesList, nextNode, Array.from(visetedNodesList)) }
+      }
+      return cyclesList
+    }
+
+    function printCycles(cyclesList) {
+      var textResult = ""
+      for (let cycle of cyclesList) {
+        if (!cycle)
+        { continue; }
+        firstNode = cycle[0]
+        for (let node of cycle) {
+          textResult += node._private.data.name + "->"
+        }
+        textResult += firstNode._private.data.name + "\n"
+      }
+      alert(textResult)
     }
 
     // |================================|
