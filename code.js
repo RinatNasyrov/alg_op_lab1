@@ -220,16 +220,34 @@ Promise.all([
     radio.forEach( makeRadio );
 
     // |================================|
-    // |            Кнопка              |
+    // |            Кнопки              |
     // |================================|
     var $cyclesButton = h('button', { }, [t('Обнаружить циклы')]);
     $cyclesButton.addEventListener('click', findCycles)
     $config.appendChild( $cyclesButton );
 
+    var $stepButton = h('button', { }, [t('Шаг')]);
+    $stepButton.addEventListener('click', addRandomPoint)
+    $config.appendChild( $stepButton );
+
+    // Пример добавления графа пока что
+    var $clearButton = h('button', { }, [t('Очистить')]);
+    $clearButton.addEventListener('click', function() { chart.data.datasets.push({
+      id:"11",
+      data: [1, 2, 3],
+      label: 'test'
+    })
+    chart.update();
+   })
+    $config.appendChild( $clearButton );
+
     // |================================|
     // |                                |
     // |    Объявления функций          |
     // |                                |
+    // |================================|
+    // |================================|
+    // |      Создание узла             |
     // |================================|
     function createNode(x, y) {
       id = Math.random()
@@ -247,6 +265,9 @@ Promise.all([
       });
     }
 
+    // |================================|
+    // |       Создание связи           |
+    // |================================|
     function clearLastHightlightNode() {
       if (lastNodeId) { cy.getElementById(lastNodeId).style('background-color', Colors.BLUE); }
       lastNodeId = undefined;
@@ -276,15 +297,24 @@ Promise.all([
       { highlightNextNode(nodeId) }
     }
 
+    // |================================|
+    // |       Разрушение узла          |
+    // |================================|
     function destroy(element) {
       cy.remove(element);
     }
 
+    // |================================|
+    // |      Изменение узла            |
+    // |================================|
     function changeNode(node) {
       let name = prompt('Введите новое название', data(node).name);
       node.data('name', name)
     }
 
+    // |================================|
+    // |       Изменение связи          |
+    // |================================|
     function changeEdge(edge) {
       let weight = undefined
       weight = parseFloat(prompt('Введите новое значение', data(edge).weight));
@@ -295,6 +325,9 @@ Promise.all([
       }
     }
 
+    // |================================|
+    // |       Поиск циклов             |
+    // |================================|
     function findCycles() {
       var cyclesList = []
       for (let node of cy.nodes()) {
@@ -330,6 +363,33 @@ Promise.all([
     }
 
     // |================================|
+    // |   Импульсное моделирование     |
+    // |================================|
+    function addDataPoint(value = null) {
+      timeCounter++;
+      const newValue = value !== null ? value : Math.random() * 100;
+      
+      chart.data.labels.push(`Время ${timeCounter}`);
+      chart.data.datasets[0].data.push(newValue);
+      if (chart.data.labels.length > 10) {
+          chart.data.labels.shift();
+          chart.data.datasets[0].data.shift();
+      }
+      chart.update();
+    }
+
+    function addRandomPoint() {
+      addDataPoint(Math.random() * 100);
+    }
+
+    function clearChart() {
+      chart.data.labels = [];
+      chart.data.datasets[0].data = [];
+      timeCounter = 0;
+      chart.update();
+    }
+
+    // |================================|
     // |                                |
     // |    Обработчики событий         |
     // |                                |
@@ -353,5 +413,37 @@ Promise.all([
           changeEdge(target);
         }
       }
+    });
+
+    // |================================|
+    // |                                |
+    // |            График              |
+    // |                                |
+    // |================================|
+    const ctx = document.getElementById('impulseChart').getContext('2d');
+    let timeCounter = 0;
+    
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Динамические данные',
+                data: [],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
     });
   });
