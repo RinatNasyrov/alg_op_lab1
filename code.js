@@ -13,6 +13,9 @@ const Action = {
   CHANGE: 'change',
 };
 const DELIMITER = ":"
+const DEFAULT_NODE_NAME = "Новая вершина"
+const DEFAULT_NODE_VALUE = 0
+const DEFAULT_WEIGHT = 1
 var currentAction = Action.BLANK;
 var lastNodeId = undefined;
 
@@ -288,7 +291,7 @@ Promise.all([
           data: {
             id: id.toString(),
             idInt: id,
-            name: "Новая вершина",
+            name: `${DEFAULT_NODE_NAME}${DELIMITER}${DEFAULT_NODE_VALUE}`,
           },
           position: { 
             x: x, 
@@ -320,7 +323,7 @@ Promise.all([
               id: id.toString(),
               source: lastNodeId,
               target: nodeId,
-              weight: 1,
+              weight: DEFAULT_WEIGHT,
             },
         });
         clearLastHightlightNode()
