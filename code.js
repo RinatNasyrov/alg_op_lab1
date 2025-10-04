@@ -12,12 +12,15 @@ const Action = {
   DESTROY: 'destroy',
   CHANGE: 'change',
 };
+const CHART_LEN = 10
 const DELIMITER = ":"
 const DEFAULT_NODE_NAME = "Новая вершина"
 const DEFAULT_NODE_VALUE = 0
 const DEFAULT_WEIGHT = 1
 var currentAction = Action.BLANK;
 var lastNodeId = undefined;
+var chartSteps = 0;
+var nextId = Math.random();
 
 Promise.all([
   fetch('cy-style.json')
@@ -63,6 +66,30 @@ Promise.all([
     var group = function(element){
       return element._private.group
     }
+    // |================================|
+    // |                                |
+    // |            График              |
+    // |                                |
+    // |================================|
+    const ctx = document.getElementById('impulseChart').getContext('2d');
+    
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: []
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    // min: -1,
+                    // max: 1
+                }
+            }
+        }
+    });
 
     // |================================|
     // |                                |
@@ -82,7 +109,7 @@ Promise.all([
 
     // Параметры отрисовки сцены
     var params = {
-      name: 'fcose',
+      name: 'circle',
       idealEdgeLength: e => idealEdgeLengthVal,
       animate: true,
       randomize: false
@@ -103,11 +130,16 @@ Promise.all([
     var layout = makeLayout({ animate: true });
     layout.run();
     var $config = $('#config');
-    // По умолчанию засунем значение 0 в каждый узел
     cy.nodes().forEach(function(node) {
+      // По умолчанию засунем значение 0 в каждый узел
       var name = node.data("name")
       node.data("name", `${name}${DELIMITER}${0}`)
+      // Покрасим в случайные цвета
+      node.style("background-color", getRandomColor())
+      // И создадим график
+      addChart(node);
     })
+    //step();
     
     // Сворачивание/разворачивание бокового меню
     $('#config-toggle').addEventListener('click', function(){
@@ -169,7 +201,8 @@ Promise.all([
       $input.addEventListener('change', update);
     }
     // Непсредственно вызов добавления слайдеров 
-    sliders.forEach( makeSlider );
+    // sliders.forEach( makeSlider );
+    // Имеет смысл только с layout fcose, поэтому уберем 
 
     // |================================|
     // |            Радио               |
@@ -232,18 +265,12 @@ Promise.all([
     $config.appendChild( $cyclesButton );
 
     var $stepButton = h('button', { }, [t('Шаг')]);
-    $stepButton.addEventListener('click', addRandomPoint)
+    $stepButton.addEventListener('click', step)
     $config.appendChild( $stepButton );
 
     // Пример добавления графа пока что
-    var $clearButton = h('button', { }, [t('Очистить')]);
-    $clearButton.addEventListener('click', function() { chart.data.datasets.push({
-      id:"11",
-      data: [1, 2, 3],
-      label: 'test'
-    })
-    chart.update();
-   })
+    var $clearButton = h('button', { }, [t('Очистить импульсы')]);
+    $clearButton.addEventListener('click', clearNodeValues)
     $config.appendChild( $clearButton );
 
     // |================================|
@@ -251,6 +278,17 @@ Promise.all([
     // |    Объявления функций          |
     // |                                |
     // |================================|
+
+  function getRandomColor() {
+      const r = Math.floor(Math.random() * 256);
+      const g = Math.floor(Math.random() * 256);
+      const b = Math.floor(Math.random() * 256);
+      return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  function getNextId() {
+    return (nextId++).toString();
+  }
 
     // |================================|
     // |      Парсинг имени узла        |
@@ -285,12 +323,11 @@ Promise.all([
     // |      Создание узла             |
     // |================================|
     function createNode(x, y) {
-      id = Math.random()
+      let id = getNextId()
       cy.add({
           group: 'nodes',
           data: {
-            id: id.toString(),
-            idInt: id,
+            id: id,
             name: `${DEFAULT_NODE_NAME}${DELIMITER}${DEFAULT_NODE_VALUE}`,
           },
           position: { 
@@ -298,6 +335,9 @@ Promise.all([
             y: y, 
           }
       });
+      node = cy.getElementById(id)
+      node.style("background-color", getRandomColor())
+      addChart(node)
     }
 
     // |================================|
@@ -316,11 +356,10 @@ Promise.all([
 
     function createEdge(nodeId) {
       if (lastNodeId) {
-        id = Math.random()
         cy.add({
             group: 'edges',
             data: {
-              id: id.toString(),
+              id: getNextId(),
               source: lastNodeId,
               target: nodeId,
               weight: DEFAULT_WEIGHT,
@@ -336,6 +375,7 @@ Promise.all([
     // |       Разрушение узла          |
     // |================================|
     function destroy(element) {
+      if (group(element) == Groups.NODES) { removeChart(element); }
       cy.remove(element);
     }
 
@@ -350,6 +390,7 @@ Promise.all([
       } else {
         setNodeName(node, name);
         setNodeValue(node, value);
+        updateChart(node);
       }
     }
 
@@ -396,9 +437,9 @@ Promise.all([
         textResult += `${i + 1}.`
         firstNode = cycle[0]
         for (let node of cycle) {
-          textResult += `${node.data("name")}->`
+          textResult += `${getNodeName(node)}->`
         }
-        textResult += `${firstNode.data("name")}\n`
+        textResult += `${getNodeName(firstNode)}\n`
       }
       alert(textResult);
     }
@@ -406,27 +447,91 @@ Promise.all([
     // |================================|
     // |   Импульсное моделирование     |
     // |================================|
-    function addDataPoint(value = null) {
-      timeCounter++;
-      const newValue = value !== null ? value : Math.random() * 100;
-      
-      chart.data.labels.push(`Время ${timeCounter}`);
-      chart.data.datasets[0].data.push(newValue);
-      if (chart.data.labels.length > 10) {
+    function step() {
+      updateNodeValues();
+
+      chartSteps++;
+      chart.data.labels.push(`Время ${chartSteps}`);
+
+      var node;
+      for (dataset of chart.data.datasets)
+      { 
+        node = cy.getElementById(dataset.id)
+        dataset.data.push(getNodeValue(node));
+        console.log(chart.data.labels.length) 
+        if (chart.data.labels.length > CHART_LEN) {
           chart.data.labels.shift();
-          chart.data.datasets[0].data.shift();
+          dataset.data.shift();
+        }
       }
+
       chart.update();
     }
 
-    function addRandomPoint() {
-      addDataPoint(Math.random() * 100);
+    function addChart(node) {
+      chart.data.datasets.push({
+          id: node.data("id"),
+          label: getNodeName(node),
+          data: [getNodeValue(node)],
+          borderColor: node.style("background-color")
+      });
+      
+      chart.update();
     }
 
-    function clearChart() {
-      chart.data.labels = [];
-      chart.data.datasets[0].data = [];
-      timeCounter = 0;
+    function removeChart(node) {
+      const index = chart.data.datasets.findIndex(dataset => dataset.id === node.data("id"));
+      if (index !== -1) {
+          chart.data.datasets.splice(index, 1);
+          chart.update();
+      }
+    }
+
+    function updateChart(node) {
+        const dataset = chart.data.datasets.find(d => d.id === node.data("id"));
+        if (dataset) {
+            dataset.label = getNodeName(node);
+            dataset.data.pop()
+            dataset.data.push(getNodeValue(node))
+            chart.update();
+        }
+    }
+
+    function nextNodeValue(node) {
+      var newVal = getNodeValue(node)
+      for (let edge of node.incomers()) {
+        // метод incomers() должен возвращать только ребра 
+        // по аналогии с outgoers(), но по факту отдает еще и узлы
+        // поэтому фильруем
+        if (group(edge) != Groups.EDGES)
+        { continue; }
+        nodeId = edge.data("source")
+        prevNode = cy.getElementById(nodeId)
+        newVal += edge.data("weight") * getNodeValue(prevNode)
+      }
+      return newVal
+    }
+
+    function updateNodeValues() {
+      nextValues = {}
+      for (let node of cy.nodes()) {
+        nextValues[node.data("id")] = nextNodeValue(node)
+      }
+
+      for (let node of cy.nodes()) {
+        setNodeValue(node, nextValues[node.data("id")])
+      }
+    }
+
+    function clearNodeValues() {
+      cy.nodes().forEach(function(node) {
+        setNodeValue(node, DEFAULT_NODE_VALUE);
+      })
+      chart.data.datasets.forEach(dataset => {
+          dataset.data = [DEFAULT_NODE_VALUE];
+      });
+      chartSteps = 0;
+      chart.data.labels = [`Время ${chartSteps}`];
       chart.update();
     }
 
@@ -454,37 +559,5 @@ Promise.all([
           changeEdge(target);
         }
       }
-    });
-
-    // |================================|
-    // |                                |
-    // |            График              |
-    // |                                |
-    // |================================|
-    const ctx = document.getElementById('impulseChart').getContext('2d');
-    let timeCounter = 0;
-    
-    const chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Динамические данные',
-                data: [],
-                borderColor: 'rgb(75, 192, 192)',
-                backgroundColor: 'rgba(75, 192, 192, 0.1)',
-                tension: 0.1,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100
-                }
-            }
-        }
     });
   });
