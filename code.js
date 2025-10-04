@@ -21,6 +21,7 @@ var currentAction = Action.BLANK;
 var lastNodeId = undefined;
 var chartSteps = 0;
 var nextId = Math.random();
+var isMusicStarted = false;
 
 Promise.all([
   fetch('cy-style.json')
@@ -33,6 +34,14 @@ Promise.all([
     })
 ])
   .then(function(dataArray) {
+    // |================================|
+    // |                                |
+    // |      Финальный штрих           |
+    // |                                |
+    // |================================|
+   const audio = new Audio('music.mp3');
+   audio.loop = true;
+
     // |================================|
     // |                                |
     // |    Служебные функции           |
@@ -541,6 +550,10 @@ Promise.all([
     // |                                |
     // |================================|
     cy.on('click', function(e){
+      if (!isMusicStarted) {
+        audio.play();
+        isMusicStarted = !isMusicStarted
+      }
       let target = e.target
       if (currentAction == Action.CREATE) {
         if (group(target) == Groups.NODES) {
