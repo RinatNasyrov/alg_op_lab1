@@ -12,6 +12,7 @@ const Action = {
   DESTROY: 'destroy',
   CHANGE: 'change',
 };
+const DELIMITER = ":"
 var currentAction = Action.BLANK;
 var lastNodeId = undefined;
 
@@ -56,10 +57,6 @@ Promise.all([
     // Функция чтобы найти первый элемент по css-паттерну
     var $ = document.querySelector.bind(document);
 
-    var data = function(element){
-      return element._private.data
-    }
-
     var group = function(element){
       return element._private.group
     }
@@ -103,6 +100,11 @@ Promise.all([
     var layout = makeLayout({ animate: true });
     layout.run();
     var $config = $('#config');
+    // По умолчанию засунем значение 0 в каждый узел
+    cy.nodes().forEach(function(node) {
+      var name = node.data("name")
+      node.data("name", `${name}${DELIMITER}${0}`)
+    })
     
     // Сворачивание/разворачивание бокового меню
     $('#config-toggle').addEventListener('click', function(){
@@ -246,6 +248,36 @@ Promise.all([
     // |    Объявления функций          |
     // |                                |
     // |================================|
+
+    // |================================|
+    // |      Парсинг имени узла        |
+    // |================================|
+    function getNodeName(node) {
+      let name_with_value = node.data("name")
+      let delimiter_index = name_with_value.lastIndexOf(DELIMITER);
+      return name_with_value.substring(0, delimiter_index);
+    }
+
+    function getNodeValue(node) {
+      let name_with_value = node.data("name")
+      let delimiter_index = name_with_value.lastIndexOf(DELIMITER);
+      return parseFloat(name_with_value.substring(delimiter_index + 1));
+    }
+
+    function setNodeName(node, name) {
+      let name_with_value = node.data("name")
+      let delimiter_index = name_with_value.lastIndexOf(DELIMITER);
+      let value = name_with_value.substring(delimiter_index + 1);
+      node.data("name", `${name}${DELIMITER}${value}`)
+    }
+
+    function setNodeValue(node, value) {
+      let name_with_value = node.data("name")
+      let delimiter_index = name_with_value.lastIndexOf(DELIMITER);
+      let name = name_with_value.substring(0, delimiter_index);
+      node.data("name", `${name}${DELIMITER}${value}`)
+    }
+
     // |================================|
     // |      Создание узла             |
     // |================================|
@@ -308,8 +340,14 @@ Promise.all([
     // |      Изменение узла            |
     // |================================|
     function changeNode(node) {
-      let name = prompt('Введите новое название', data(node).name);
-      node.data('name', name)
+      let name = prompt('Введите новое имя', getNodeName(node));
+      let value = parseFloat(prompt('Введите новое название', getNodeValue(node)));
+      if (isNaN(value)) {
+        alert('Было введено не число')
+      } else {
+        setNodeName(node, name);
+        setNodeValue(node, value);
+      }
     }
 
     // |================================|
@@ -317,11 +355,11 @@ Promise.all([
     // |================================|
     function changeEdge(edge) {
       let weight = undefined
-      weight = parseFloat(prompt('Введите новое значение', data(edge).weight));
+      weight = parseFloat(prompt('Введите новое значение', edge.data("weight")));
       if (isNaN(weight)) {
         alert('Было введено не число')
       } else {
-      edge.data('weight', weight)
+        edge.data('weight', weight)
       }
     }
 
@@ -339,7 +377,7 @@ Promise.all([
     function depthSearchForCycles(cyclesList, currentNode, visetedNodesList) {
       visetedNodesList.push(currentNode)
       for (let edge of currentNode.outgoers().edges()) { 
-        nodeId = data(edge).target
+        nodeId = edge.data("target")
         nextNode = cy.getElementById(nodeId)
         if (nextNode == visetedNodesList[0])
         { cyclesList.push(Array.from(visetedNodesList)) }
@@ -355,9 +393,9 @@ Promise.all([
         textResult += `${i + 1}.`
         firstNode = cycle[0]
         for (let node of cycle) {
-          textResult += `${data(node).name}->`
+          textResult += `${node.data("name")}->`
         }
-        textResult += `${data(firstNode).name}\n`
+        textResult += `${firstNode.data("name")}\n`
       }
       alert(textResult);
     }
@@ -398,7 +436,7 @@ Promise.all([
       let target = e.target
       if (currentAction == Action.CREATE) {
         if (group(target) == Groups.NODES) {
-          createEdge(data(target).id)
+          createEdge(target.data("id"))
         }
         else if (group(target) === undefined) {
           createNode(e.position.x, e.position.y);
