@@ -549,7 +549,7 @@ Promise.all([
     // |    Обработчики событий         |
     // |                                |
     // |================================|
-    cy.on('click', function(e){
+    cy.on('vclick', function(e){
       if (!isMusicStarted) {
         audio.play();
         isMusicStarted = !isMusicStarted
