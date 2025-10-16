@@ -54,37 +54,23 @@
       <canvas id="impulseChart"></canvas>
     </div>
 
-    <!-- Модальное окно -->
-    <div id="modal">
-        <div id="modalContent">
-            <p>Нажмите "Старт", чтобы воспроизвести звук</p>
-            <button id="startBtn">Старт</button>
-            <button id="cancelBtn">Отмена</button>
+    <div id="modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <p class="title_text">Эта Лабораторная работа</p>
+        <p class="title_text">Подготовлена студентами гр.6233</p>
+        <div class="img_container">
+          <div class="img_item">
+            <img src="images/pomni.png" alt="Насыров Ринат">
+            <p class="title_text">Насыров Ринат</p>
+          </div>
+          <div class="img_item">
+            <img src="images/ragatha.png" alt="Алексеев Максим">
+            <p class="title_text">Алексеев Максим</p>
+          </div>
         </div>
+        <button id="playButton">Погнали!</button>
+      </div>
     </div>
-
-    <script>
-    const audio = new Audio('sound.mp3'); // путь к вашему аудио
-    const modal = document.getElementById('modal');
-    const startBtn = document.getElementById('startBtn');
-    const cancelBtn = document.getElementById('cancelBtn');
-
-    // Кнопка Старт
-    startBtn.addEventListener('click', () => {
-        audio.play().then(() => {
-            console.log("Аудио стартовало!");
-            modal.style.display = 'none'; // закрываем модальное окно
-            // Здесь можно добавить свои действия после старта аудио
-        }).catch(err => {
-            console.error("Ошибка воспроизведения:", err);
-        });
-    });
-
-    // Кнопка Отмена
-    cancelBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
-        console.log("Пользователь отменил");
-    });
-    </script>
   </body>
 </html>
