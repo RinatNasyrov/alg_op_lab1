@@ -9,6 +9,7 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  background: #ffd2d2;
 }
 
 #cy {
@@ -17,6 +18,7 @@ body {
   top: 0;
   bottom: 0;
   right: 17em;
+  background-color: #ffd2d2;
 }
 
 .config {
@@ -25,10 +27,10 @@ body {
   top: 0;
   bottom: 0;
   width: 50em;
-  background: rgba(0, 0, 0, 0.666);
+  background: #000000aa;
   box-sizing: border-box;
   padding: 1em;
-  color: #fff;
+  color: #ffd2d2;
   transition-property: opacity;
   transition-duration: 250ms;
   transition-timing-function: ease-out;
@@ -80,7 +82,7 @@ a:hover {
   padding: 1em;
   margin: 0.2em;
   cursor: pointer;
-  color: #fff;
+  color: #ffd2d2;
   z-index: 9999999;
 }
 
@@ -93,12 +95,18 @@ a:hover {
   right: 0;
 }
 
-.tip-link {
-  display: block;
+input[type="radio"] {
+  width: 30px;
+  height: 30px;
+  accent-color: #ffd2d2;
 }
 
-@media (max-width: 600px){
-  #cy {
-    right: 0;
-  }
+button {
+  height: 3em;
+  border: none;              /* убираем стандартную рамку */
+  background-color: #420e0e; /* цвет кнопки */
+  color: #ffd2d2;              /* цвет текста */
+  border-radius: 2em;       /* скругление углов */
+  cursor: pointer;           /* курсор при наведении */
+  transition: background-color 0.3s;
 }

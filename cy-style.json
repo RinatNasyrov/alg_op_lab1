@@ -9,14 +9,15 @@
   "selector": "node",
   "style": {
       "background-color": "blue",
-      "label": "data(name)"
+      "label": "data(name)",
+      "border-width": "3"
   }
 }, {
   "selector": "edge",
   "style": {
       "width": 3,
-      "line-color": "#ccc",
-      "target-arrow-color": "#ccc",
+      "line-color": "#000000aa",
+      "target-arrow-color": "#000000aa",
       "target-arrow-shape": "triangle",
       "curve-style": "bezier",
       "label": "data(weight)"
