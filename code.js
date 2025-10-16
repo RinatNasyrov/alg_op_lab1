@@ -630,10 +630,6 @@ Promise.all([
     // |                                |
     // |================================|
     cy.on('vclick', function(e){
-      if (!isMusicStarted) {
-        audio.play();
-        isMusicStarted = !isMusicStarted
-      }
       let target = e.target
       if (currentAction == Action.CREATE) {
         if (group(target) == Groups.NODES) {
@@ -653,4 +649,31 @@ Promise.all([
         }
       }
     });
+
+    // |================================|
+    // |                                |
+    // |         Модальное окно         |
+    // |                                |
+    // |================================|
+
+    var modal = document.getElementById("modal");
+    var span = document.getElementsByClassName("close")[0];
+    var playButton = document.getElementById("playButton");
+    
+    // Если нажмем на кнопку то включим музыку и закроем модальное окно
+    playButton.addEventListener('click', function(e) {
+      if (!isMusicStarted) {
+        audio.play();
+        isMusicStarted = !isMusicStarted
+        modal.style.display = "none";
+      }
+    })
+
+    // Отобразим модальное окно сразу
+    modal.style.display = "block";
+
+    // Закроем модальное окно
+    span.onclick = function() {
+      modal.style.display = "none";
+    }
   });

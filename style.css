@@ -9,7 +9,6 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #ffd2d2;
 }
 
 #cy {
@@ -19,6 +18,7 @@ body {
   bottom: 0;
   right: 17em;
   background-color: #ffd2d2;
+  width: 100%;
 }
 
 .config {
@@ -103,10 +103,71 @@ input[type="radio"] {
 
 button {
   height: 3em;
-  border: none;              /* убираем стандартную рамку */
-  background-color: #420e0e; /* цвет кнопки */
-  color: #ffd2d2;              /* цвет текста */
-  border-radius: 2em;       /* скругление углов */
-  cursor: pointer;           /* курсор при наведении */
+  width: 100%;
+  border: none;
+  background-color: #420e0e; 
+  color: #ffd2d2; 
+  border-radius: 2em;
+  cursor: pointer;
   transition: background-color 0.3s;
+}
+
+.title_text {
+    font-size: 24px; /* увеличиваем размер текста */
+    color: white; /* белый цвет текста */
+    -webkit-text-stroke: 1px black; /* черный контур для браузеров на WebKit */
+    text-stroke: 1px black; /* стандартное свойство (не во всех браузерах) */
+    font-weight: bold; /* чтобы контур был более заметен */
+}
+
+.modal {
+  display: block;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+}
+
+
+.modal-content {
+  background-color: #ffd2d2;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 45%;
+  border-radius: 2em;
+  text-align: center;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.img_container {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+}
+.img_item {
+  text-align: center;
+}
+img {
+  width: 200px;
+  height: auto;
+  display: block;
+  border-radius: 2em;
 }
