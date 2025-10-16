@@ -539,15 +539,19 @@ Promise.all([
       chart.data.labels.push(`Время ${chartSteps}`);
 
       var node;
-      for (dataset of chart.data.datasets)
+      for (let [i, dataset] of chart.data.datasets.entries())
       { 
         node = cy.getElementById(dataset.id)
         dataset.data.push(getNodeValue(node));
-        console.log(chart.data.labels.length) 
+        console.log(chart.data.labels.length)
+        // Смещение данных после максимального числа одновременно отображаемых шагов
         if (chart.data.labels.length > CHART_LEN) {
-          chart.data.labels.shift();
-          dataset.data.shift();
+          chart.data.datasets[i].data = dataset.data.slice(-CHART_LEN);
         }
+      }
+      // Смещение лейблов после максимального числа одновременно отображаемых шагов
+      if (chart.data.labels.length > CHART_LEN) {
+        chart.data.labels.shift();
       }
 
       chart.update();
