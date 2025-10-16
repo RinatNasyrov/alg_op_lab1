@@ -148,6 +148,7 @@ Promise.all([
       // И создадим график
       addChart(node);
     })
+    cy.edges().forEach(applyEdgeStyle)
     //step();
     
     // Сворачивание/разворачивание бокового меню
@@ -269,9 +270,9 @@ Promise.all([
     // |================================|
     // |            Кнопки              |
     // |================================|
-    var $cyclesButton = h('button', { }, [t('Обнаружить циклы')]);
-    $cyclesButton.addEventListener('click', findCycles)
-    $config.appendChild( $cyclesButton );
+    var $structureAnalysisButton = h('button', { }, [t('Структурный анализ')]);
+    $structureAnalysisButton.addEventListener('click', structureAnalysis)
+    $config.appendChild( $structureAnalysisButton );
 
     var $stepButton = h('button', { }, [t('Шаг')]);
     $stepButton.addEventListener('click', step)
@@ -350,6 +351,29 @@ Promise.all([
     }
 
     // |================================|
+    // |       Разрушение узла          |
+    // |================================|
+    function destroy(element) {
+      if (group(element) == Groups.NODES) { removeChart(element); }
+      cy.remove(element);
+    }
+
+    // |================================|
+    // |      Изменение узла            |
+    // |================================|
+    function changeNode(node) {
+      let name = prompt('Введите новое имя', getNodeName(node));
+      let value = parseFloat(prompt('Введите новое название', getNodeValue(node)));
+      if (isNaN(value)) {
+        alert('Было введено не число')
+      } else {
+        setNodeName(node, name);
+        setNodeValue(node, value);
+        updateChart(node);
+      }
+    }
+
+    // |================================|
     // |       Создание связи           |
     // |================================|
     function clearLastHightlightNode() {
@@ -381,29 +405,6 @@ Promise.all([
     }
 
     // |================================|
-    // |       Разрушение узла          |
-    // |================================|
-    function destroy(element) {
-      if (group(element) == Groups.NODES) { removeChart(element); }
-      cy.remove(element);
-    }
-
-    // |================================|
-    // |      Изменение узла            |
-    // |================================|
-    function changeNode(node) {
-      let name = prompt('Введите новое имя', getNodeName(node));
-      let value = parseFloat(prompt('Введите новое название', getNodeValue(node)));
-      if (isNaN(value)) {
-        alert('Было введено не число')
-      } else {
-        setNodeName(node, name);
-        setNodeValue(node, value);
-        updateChart(node);
-      }
-    }
-
-    // |================================|
     // |       Изменение связи          |
     // |================================|
     function changeEdge(edge) {
@@ -413,20 +414,36 @@ Promise.all([
         alert('Было введено не число')
       } else {
         edge.data('weight', weight)
+        applyEdgeStyle(edge)
       }
+    }
+
+    // Делает ребра с отрицательным весом пунктирнами, 
+    // а остальные непрерывными
+    function applyEdgeStyle(edge) {
+      if (edge.data('weight') < 0) {  
+        edge.style({
+          'line-style': 'dashed',
+          'line-dash-pattern': [6, 3]
+        });
+      }
+      else { edge.removeStyle(); }
     }
 
     // |================================|
     // |       Поиск циклов             |
     // |================================|
-    function findCycles() {
+    
+    // Обработчик кнопки "Структурный анализ"
+    function structureAnalysis() {
       var cyclesList = []
       for (let node of cy.nodes()) {
         cyclesList = cyclesList.concat(depthSearchForCycles([], node, []));
       }
-      printCycles(cyclesList);
+      printAnalysisResult(deleteCopies(cyclesList));
     }
 
+    // Поиском в глубину находит список циклов, содержащих currentNode
     function depthSearchForCycles(cyclesList, currentNode, visetedNodesList) {
       visetedNodesList.push(currentNode)
       for (let edge of currentNode.outgoers().edges()) { 
@@ -440,17 +457,76 @@ Promise.all([
       return cyclesList
     }
 
-    function printCycles(cyclesList) {
+    // Убирает повторяющиеся циклы с узлами в другом порядке
+    function deleteCopies(cyclesList) {
+      cyclesDict = {}
+      for (let cycle of cyclesList) {
+        cyclesDict[getCycleHash(cycle)] = cycle
+      }
+      
+      var filteredList = [];
+      for (var key in cyclesDict) {
+        if (cyclesDict.hasOwnProperty(key)) {
+            filteredList.push(cyclesDict[key]);
+        }
+      }
+
+      return filteredList
+    }
+
+    // Формирует одинаковые коды для одинаковых циклов 
+    // независимо от порядка узлов, нужно для удаления повторов
+    function getCycleHash(cycle) {
+      var ids = []
+      for (let node of cycle) {
+        ids.push(node.data("id"))
+      }
+      ids = ids.sort()
+      return ids.join('')
+    }
+
+    // Выводит человекочитаемый результат анализа графа
+    function printAnalysisResult(cyclesList) {
+      var negative_count = 0
       var textResult = ""
       for (let [i, cycle] of cyclesList.entries()) {
-        textResult += `${i + 1}.`
+        negative_count += is_negative(cycle) ? 1 : 0;
+        textResult += `${i + 1}. (${is_negative(cycle) ? '-' : '+'}) `
         firstNode = cycle[0]
         for (let node of cycle) {
           textResult += `${getNodeName(node)}->`
         }
         textResult += `${getNodeName(firstNode)}\n`
       }
+      textResult += `\nЧисло узлов: ${cy.nodes().length}\n`
+      textResult += `Число ребер: ${cy.edges().length}\n`
+      textResult += `Число циклов: ${cyclesList.length}\n`
+      textResult += `Число отрицательных циклов: ${negative_count}\n`
+      textResult += `Структурная устойчивость: ${negative_count % 2 == 1 ? 'да' : 'нет'}\n`
       alert(textResult);
+    }
+
+    // |================================|
+    // |    Структурная целостность     |
+    // |================================|
+
+    // Цикл отрицательный, если у ребер в нем нечетное число отрицательных весов
+    function is_negative(cycle) {
+      var product = 1
+      for (let [i, from_node] of cycle.entries()) {
+        to_node = cycle[(i + 1) % cycle.length]
+        product *= get_weight(from_node, to_node)
+      }
+      return product < 0
+    }
+
+    // Находит вес первого попавшегося ребра, идущего из одного узла в другой
+    function get_weight(from_node, to_node) {
+      for (let edge of from_node.outgoers().edges()) { 
+        if (to_node.data("id") == edge.data("target"))
+        { return edge.data("weight") }
+      }
+      return null;
     }
 
     // |================================|
