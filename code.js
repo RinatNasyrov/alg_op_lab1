@@ -93,8 +93,8 @@ Promise.all([
             scales: {
                 y: {
                     beginAtZero: true,
-                    // min: -1,
-                    // max: 1
+                    min: 100,
+                    max: -100
                 }
             }
         }
@@ -363,7 +363,7 @@ Promise.all([
     // |================================|
     function changeNode(node) {
       let name = prompt('Введите новое имя', getNodeName(node));
-      let value = parseFloat(prompt('Введите новое название', getNodeValue(node)));
+      let value = parseFloat(prompt('Введите новое значение', getNodeValue(node)));
       if (isNaN(value)) {
         alert('Было введено не число')
       } else {
