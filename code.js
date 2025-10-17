@@ -100,6 +100,9 @@ Promise.all([
         }
     });
 
+    chart.options.plugins.legend.labels.color = "#ffd2d2"
+    chart.update()
+
     // |================================|
     // |                                |
     // |          Канвас                |
